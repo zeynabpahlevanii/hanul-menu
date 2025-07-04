@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>هانول - خوش آمدید</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./css/input.css" />
+    <style>
+        /* Custom styles for the main container to create the dome shape */
+        .main-container-dome {
+            /* Large border-radius for the top corners to create the dome effect */
+            border-top-left-radius: 9999px; /* Effectively makes it a half-circle/dome */
+            border-top-right-radius: 9999px; /* Effectively makes it a half-circle/dome */
+            /* Smaller radius for the bottom corners, adjust as needed */
+            border-bottom-left-radius: 60px;
+            border-bottom-right-radius: 60px;
+            overflow: hidden; /* Important to clip content within the rounded corners */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+ 
+    <div class="w-full max-w-sm bg-gradient-to-b border-1 shadow-inner shadow-gray-300  from-white to-amber-50 p-6 flex flex-col items-center main-container-dome">
+        <div class="text-center mt-6 mb-8 px-4">
+            <h1 class="text-2xl font-bold text-gray-800">
+                به <span class="text-amber-500">هانول</span> خوش آمدید
+            </h1>
+            <p class="text-sm text-gray-600 mt-2 leading-relaxed">
+                جایی که سادگی و آرامش کنار هم جمع شده‌اند
+            </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 w-full">
+
+            <div class="bg-white rounded-3xl p-4 flex flex-col items-center text-center shadow-md border border-amber-50 relative -rotate-2">
+                <img src="https://em-content.zobj.net/source/microsoft-teams/363/bell_1f514.png" alt="آیکون زنگ" class="w-12 h-12 mb-2">
+                <p class="text-xs text-gray-700 leading-tight">در همیشه بازه برای یه لحظه آرام</p>
+            </div>
+
+            <div class="bg-white rounded-3xl p-4 flex flex-col items-center text-center shadow-md border border-amber-50 relative rotate-2">
+                <img src="https://em-content.zobj.net/source/microsoft-teams/363/bento-box_1f371.png" alt="آیکون بنتو" class="w-12 h-12 mb-2">
+                <p class="text-xs text-gray-700 leading-tight">ساده بین و خوشمزه انتخاب کن</p>
+            </div>
+
+            <div class="bg-white rounded-3xl p-4 flex flex-col items-center text-center shadow-md border border-amber-50 relative rotate-2">
+                <img src="https://em-content.zobj.net/source/microsoft-teams/363/sparkles_2728.png" alt="آیکون درخشش" class="w-12 h-12 mb-2">
+                <p class="text-xs text-gray-700 leading-tight">هانول خلوت دل‌نشین</p>
+            </div>
+
+            <div class="bg-white rounded-3xl p-4 flex flex-col items-center text-center shadow-md border border-amber-50 relative -rotate-2">
+                <img src="https://em-content.zobj.net/source/microsoft-teams/363/smiling-face-with-smiling-eyes_1f60a.png" alt="آیکون لبخند" class="w-12 h-12 mb-2">
+                <p class="text-xs text-gray-700 leading-tight">به برش شیرین از حال خوب</p>
+            </div>
+
+            <div class="bg-white rounded-3xl p-4 flex flex-col items-center text-center shadow-md border border-amber-50 relative -rotate-2">
+                <img src="https://em-content.zobj.net/source/microsoft-teams/363/tea_1f375.png" alt="آیکون چای" class="w-12 h-12 mb-2">
+                <p class="text-xs text-gray-700 leading-tight">به لیوان آرامش</p>
+            </div>
+
+            
+
+            <div class="bg-white rounded-3xl p-4 flex flex-col items-center text-center shadow-md border border-amber-50 relative rotate-2">
+                <img src="https://em-content.zobj.net/source/microsoft-teams/363/speech-balloon_1f4ac.png" alt="آیکون پیام" class="w-12 h-12 mb-2">
+                <p class="text-xs text-gray-700 leading-tight">هر صدایی یک پیام تازه برای تو</p>
+            </div>
+        </div>
+
+        <div class="mt-10 w-full px-2">
+            <a href="categories.html" class="block bg-amber-400 text-white text-center py-3 rounded-full text-lg font-semibold hover:bg-amber-500 transition-colors duration-200">
+                ورود به منو
+            </a>
+        </div>
+    </div>
+    <div id="menu"></div>
+      
+</body>
+</html>

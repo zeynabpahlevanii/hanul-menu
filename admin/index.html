@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>پنل مدیریت - محصولات</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+#product-list::-webkit-scrollbar {
+  width: 6px;
+}
+#product-list::-webkit-scrollbar-thumb {
+  background-color: #f59e0b;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-6 flex gap-6">
+
+<!-- ستون دسته‌بندی‌ها -->
+<aside class="w-56 bg-white rounded-3xl shadow-lg p-4 sticky top-6">
+  <h2 class="text-xl font-bold mb-4 text-amber-500 text-center">دسته‌بندی‌ها</h2>
+  <ul id="category-filter" class="space-y-1"></ul>
+  <button id="btn-add-category" class="mt-4 bg-amber-400 hover:bg-amber-500 text-white rounded-xl py-2 px-4 font-semibold transition w-full">
+    افزودن دسته
+  </button>
+</aside>
+
+<!-- بخش محصولات -->
+<main class="flex-1 bg-white rounded-3xl shadow-lg p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold text-amber-500">مدیریت محصولات</h1>
+    <button id="btn-add-product" class="bg-amber-400 hover:bg-amber-500 text-white rounded-xl py-2 px-4 font-semibold transition">
+      افزودن محصول
+    </button>
+  </div>
+
+  <div id="product-list" class="space-y-4 overflow-y-auto max-h-[70vh]"></div>
+</main>
+
+<!-- مودال دسته -->
+<div id="category-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-4">
+    <h2 id="category-modal-title" class="text-xl font-bold text-gray-800"></h2>
+    <input type="hidden" id="category-id" />
+    <input type="text" id="category-name" placeholder="نام دسته (فارسی)" class="w-full border border-gray-300 rounded-xl p-2" />
+    <input type="text" id="category-english-name" placeholder="نام انگلیسی دسته" class="w-full border border-gray-300 rounded-xl p-2" />
+    <div class="flex justify-between mt-4">
+      <button id="save-category-btn" class="bg-amber-400 hover:bg-amber-500 text-white rounded-xl py-2 px-6">ذخیره</button>
+      <button id="delete-category-btn" class="bg-red-500 hover:bg-red-600 text-white rounded-xl py-2 px-6 hidden">حذف</button>
+      <button id="cancel-category-btn" class="text-gray-500">انصراف</button>
+    </div>
+  </div>
+</div>
+
+<!-- مودال محصول -->
+<div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-4">
+    <h2 id="product-modal-title" class="text-xl font-bold text-gray-800"></h2>
+    <input type="hidden" id="product-id" />
+    <input type="text" id="product-name" placeholder="نام محصول" class="w-full border border-gray-300 rounded-xl p-2" />
+    <input type="number" id="product-price" placeholder="قیمت" class="w-full border border-gray-300 rounded-xl p-2" />
+    <select id="product-category" class="w-full border border-gray-300 rounded-xl p-2">
+      <option value="">انتخاب دسته</option>
+    </select>
+    <div class="flex justify-between mt-4">
+      <button id="save-product-btn" class="bg-amber-400 hover:bg-amber-500 text-white rounded-xl py-2 px-6">ذخیره</button>
+      <button id="delete-product-btn" class="bg-red-500 hover:bg-red-600 text-white rounded-xl py-2 px-6 hidden">حذف</button>
+      <button id="cancel-product-btn" class="text-gray-500">انصراف</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const apiURL = "/api";
+
+let categories = [];
+let products = [];
+let currentFilter = "all";
+
+const categoryFilter = document.getElementById("category-filter");
+const productList = document.getElementById("product-list");
+
+const btnAddCategory = document.getElementById("btn-add-category");
+const btnAddProduct = document.getElementById("btn-add-product");
+
+const categoryModal = document.getElementById("category-modal");
+const categoryModalTitle = document.getElementById("category-modal-title");
+const categoryIdInput = document.getElementById("category-id");
+const categoryNameInput = document.getElementById("category-name");
+const categoryEnglishNameInput = document.getElementById("category-english-name");
+const saveCategoryBtn = document.getElementById("save-category-btn");
+const deleteCategoryBtn = document.getElementById("delete-category-btn");
+const cancelCategoryBtn = document.getElementById("cancel-category-btn");
+
+const productModal = document.getElementById("product-modal");
+const productModalTitle = document.getElementById("product-modal-title");
+const productIdInput = document.getElementById("product-id");
+const productNameInput = document.getElementById("product-name");
+const productPriceInput = document.getElementById("product-price");
+const productCategorySelect = document.getElementById("product-category");
+const saveProductBtn = document.getElementById("save-product-btn");
+const deleteProductBtn = document.getElementById("delete-product-btn");
+const cancelProductBtn = document.getElementById("cancel-product-btn");
+
+btnAddCategory.onclick = () => openCategoryModal();
+btnAddProduct.onclick = () => openProductModal();
+
+function openCategoryModal(cat = {}) {
+  categoryModalTitle.textContent = cat._id ? "ویرایش دسته" : "افزودن دسته";
+  categoryIdInput.value = cat._id || "";
+  categoryNameInput.value = cat.name || "";
+  categoryEnglishNameInput.value = cat.englishName || "";
+  deleteCategoryBtn.classList.toggle("hidden", !cat._id);
+  categoryModal.classList.remove("hidden");
+}
+
+function openProductModal(prod = {}) {
+  productModalTitle.textContent = prod._id ? "ویرایش محصول" : "افزودن محصول";
+  productIdInput.value = prod._id || "";
+  productNameInput.value = prod.name || "";
+  productPriceInput.value = prod.price || "";
+  productCategorySelect.innerHTML = `<option value="">انتخاب دسته</option>`;
+  categories.forEach(c => {
+    productCategorySelect.innerHTML += `<option value="${c._id}" ${c._id===prod.categoryId?"selected":""}>${c.name}</option>`;
+  });
+  deleteProductBtn.classList.toggle("hidden", !prod._id);
+  productModal.classList.remove("hidden");
+}
+
+function closeModal(modal) { modal.classList.add("hidden"); }
+
+cancelCategoryBtn.onclick = () => closeModal(categoryModal);
+cancelProductBtn.onclick = () => closeModal(productModal);
+categoryModal.onclick = e => { if(e.target===categoryModal) closeModal(categoryModal); };
+productModal.onclick = e => { if(e.target===productModal) closeModal(productModal); };
+
+async function fetchCategories() {
+  const res = await fetch(`${apiURL}/categories`);
+  categories = await res.json();
+  renderCategories();
+}
+async function fetchProducts() {
+  const res = await fetch(`${apiURL}/products`);
+  products = (await res.json()).products || [];
+  renderProducts();
+}
+
+function renderCategories() {
+  categoryFilter.innerHTML = "";
+  const allLi = document.createElement("li");
+  allLi.textContent = "همه محصولات";
+  allLi.className = `py-2 px-3 rounded-xl cursor-pointer text-center font-semibold ${currentFilter==="all"?"bg-amber-400 text-white":""}`;
+  allLi.onclick = () => { currentFilter="all"; renderCategories(); renderProducts(); };
+  categoryFilter.appendChild(allLi);
+
+  categories.forEach(c => {
+    const li = document.createElement("li");
+    li.className = `py-2 px-3 rounded-xl cursor-pointer flex flex-col ${currentFilter===c._id?"bg-amber-400 text-white":"bg-gray-50 hover:bg-amber-50"}`;
+    const name = document.createElement("div");
+    name.textContent = c.name;
+    name.className = "text-center";
+    name.onclick = () => { currentFilter=c._id; renderCategories(); renderProducts(); };
+    const edit = document.createElement("button");
+    edit.textContent = "ویرایش";
+    edit.className = "text-xs mt-1 bg-amber-300 hover:bg-amber-400 px-2 py-1 rounded";
+    edit.onclick = e => { e.stopPropagation(); openCategoryModal(c); };
+    li.append(name, edit);
+    categoryFilter.appendChild(li);
+  });
+}
+
+function renderProducts() {
+  productList.innerHTML = "";
+  const filtered = currentFilter==="all" ? products : products.filter(p=>p.categoryId===currentFilter);
+  if (!filtered.length) {
+    productList.innerHTML = `<p class="text-center text-gray-500">محصولی یافت نشد.</p>`;
+    return;
+  }
+
+  filtered.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "flex justify-between items-center bg-gray-50 rounded-xl p-4 shadow";
+    div.innerHTML = `
+      <div>
+        <p class="font-semibold">${p.name}</p>
+        <p class="text-sm text-gray-600">${p.price} تومان</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="bg-amber-300 hover:bg-amber-400 px-3 py-1 rounded" onclick='openProductModal(${JSON.stringify(p)})'>ویرایش</button>
+        <button class="bg-red-400 hover:bg-red-500 px-3 py-1 rounded" onclick='deleteProduct("${p._id}")'>حذف</button>
+        <button class="bg-blue-300 hover:bg-blue-400 px-3 py-1 rounded" onclick='toggleStatus("${p._id}")'>${p.active?"غیرفعال":"فعال"}</button>
+      </div>
+    `;
+    productList.appendChild(div);
+  });
+}
+
+window.openProductModal = openProductModal;
+
+async function deleteProduct(id) {
+  if(!confirm("حذف شود؟")) return;
+  await fetch(`${apiURL}/products/${id}`,{method:"DELETE"});
+  fetchProducts();
+}
+
+async function toggleStatus(id) {
+  await fetch(`${apiURL}/products/${id}/toggle`,{method:"PATCH"});
+  fetchProducts();
+}
+
+fetchCategories();
+fetchProducts();
+</script>
+</body>
+</html>

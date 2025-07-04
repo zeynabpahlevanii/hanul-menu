@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>منوی هانول - دسته‌بندی‌ها</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .border-card-orange {
+        border-color: #ffcb78;
+      }
+      .category-card {
+        background-color: #fffbeb;
+        border-radius: 1.5rem;
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.1);
+        border-width: 1px;
+        transition: transform 0.2s ease-in-out;
+        cursor: pointer;
+        user-select: none;
+      }
+      .category-card:hover {
+        transform: translateY(-5px);
+      }
+      .category-card img {
+        width: 4rem;
+        height: 4rem;
+        margin-bottom: 0.75rem;
+        object-fit: contain;
+      }
+      .category-card .persian-name {
+        font-weight: 600;
+        color: #333;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .category-card .english-name {
+        font-size: 0.75rem;
+        color: #71717a;
+      }
+    </style>
+  </head>
+
+  <body class="flex items-center justify-center min-h-screen p-4 bg-gray-50">
+    <div class="w-full max-w-sm p-6 flex flex-col items-center">
+      <div class="text-center mt-6 mb-8 px-4">
+        <h1 class="text-sm font-semibold text-gray-700 leading-relaxed">
+          انگشتتو ببر سمت
+          <span class="text-amber-500 font-bold">مزه‌ای</span> که دلت می‌خواد
+        </h1>
+      </div>
+
+      <div
+        id="categories-container"
+        class="grid grid-cols-2 rounded-3xl shadow-inner p-4 gap-4 w-full"
+      >
+        <!-- کارت‌های دسته‌بندی اینجا ساخته میشن -->
+      </div>
+    </div>
+
+    <script>
+      async function fetchCategories() {
+        try {
+          const res = await fetch("/api/categories");
+          if (!res.ok) throw new Error("پاسخ سرور مشکل دارد: " + res.status);
+          const categories = await res.json();
+
+          // چک کردن داده دریافتی
+          if (!Array.isArray(categories)) {
+            throw new Error("داده دریافتی آرایه نیست");
+          }
+
+          const container = document.getElementById("categories-container");
+          container.innerHTML = "";
+
+          categories.forEach((cat) => {
+            // اگر نام فیلدها در دیتابیس یا API شما متفاوت است اینجا اصلاح کن:
+            const persianName =
+              cat.persianName || cat.name || "نام دسته موجود نیست";
+            const englishName = cat.englishName || cat.english_name || "";
+            const imageUrl =
+              cat.imageUrl || cat.image_url || "https://via.placeholder.com/64";
+
+            const a = document.createElement("a");
+            a.href = `menu.html?category=${encodeURIComponent(
+              cat.id || persianName
+            )}`;
+            a.className = "category-card border-card-orange";
+            a.title = persianName;
+
+            a.innerHTML = `
+  <img src="${imageUrl}" alt="${persianName}" />
+  <p class="persian-name">
+    ${persianName} <span class="text-gray-400">|</span> <span class="text-sm text-gray-500">${englishName}</span>
+  </p>
+`;
+
+            container.appendChild(a);
+          });
+
+          // اگر دسته‌ها خالی بودند نمایش پیام
+          if (categories.length === 0) {
+            container.innerHTML =
+              '<p class="text-center text-gray-500">هیچ دسته‌بندی‌ای یافت نشد.</p>';
+          }
+        } catch (err) {
+          console.error("خطا در دریافت دسته‌بندی‌ها:", err);
+          document.getElementById("categories-container").innerHTML =
+            '<p class="text-red-500 text-center">خطا در بارگذاری دسته‌بندی‌ها</p>';
+        }
+      }
+
+      fetchCategories();
+    </script>
+  </body>
+</html>

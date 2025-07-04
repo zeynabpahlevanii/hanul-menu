@@ -1,0 +1,21 @@
+{
+  "categories": [
+  {
+    "_id": "123",
+    "name": "نوشیدنی گرم",
+    "englishName": "hot drink",
+    "iconUrl": "icons/hot-drink.svg"
+  }
+],
+  "products": [
+    {
+      "id": 1,
+      "name": "اسپرسو",
+      "price": 100,
+      "category": "نوشیدنی گرم",
+      "active": true,
+      "image": "",
+      "description": "قهوه‌ی غلیظ و تلخ که در دستگاه اسپرسوساز تهیه می‌شود."
+    }
+  ]
+}

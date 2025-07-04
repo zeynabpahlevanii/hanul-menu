@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>منوی هانول</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(to bottom, #d1d5db 0%, #f3f4f6 30%, transparent 80%);
+    }
+    .category-tab.active {
+      background-color: #f59e0b;
+      color: white;
+      border-color: #f59e0b;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-4">
+
+  <!-- دسته‌بندی‌ها -->
+  <div class="w-full max-w-sm bg-white rounded-3xl shadow-xl p-4 mb-4">
+    <div id="category-tabs" class="flex overflow-x-auto gap-3 pb-2"></div>
+  </div>
+
+  <!-- محصولات -->
+  <div
+    class="w-full max-w-sm bg-white rounded-3xl shadow-xl p-4 overflow-y-auto"
+    style="max-height: 60vh"
+    id="menu-container"
+  >
+  </div>
+
+  <!-- سبد خرید -->
+  <div
+    class="fixed bottom-4 w-full max-w-sm bg-white shadow-xl rounded-3xl px-4 py-3 flex justify-between items-center border border-amber-300 opacity-0 pointer-events-none transition-all"
+    id="cart-box"
+  >
+    <a href="cart.html" class="view-cart-button">مشاهده سبد</a>
+    <div class="flex items-center gap-2 text-sm">
+      <span id="cart-count" class="text-amber-500 font-semibold">۰</span> آیتم
+      <span class="text-gray-400">-</span>
+      <span id="cart-total" class="text-amber-500 font-bold">۰ ت</span>
+    </div>
+  </div>
+
+<script>
+  let categories = [];
+  let products = [];
+  let cart = [];
+
+  const categoryTabs = document.getElementById("category-tabs");
+  const menuContainer = document.getElementById("menu-container");
+  const cartBox = document.getElementById("cart-box");
+  const cartCount = document.getElementById("cart-count");
+  const cartTotal = document.getElementById("cart-total");
+
+  async function fetchData() {
+    try {
+      const [catsRes, prodsRes, cartRes] = await Promise.all([
+        fetch("/api/categories"),
+        fetch("/api/products"),
+        fetch("/api/cart"),
+      ]);
+      if (!catsRes.ok || !prodsRes.ok || !cartRes.ok)
+        throw new Error("مشکل در دریافت داده‌ها از سرور");
+
+      categories = await catsRes.json();
+      const prodsData = await prodsRes.json();
+      cart = (await cartRes.json()).items;
+
+      products = prodsData.products;
+
+      renderCategories();
+      renderProducts("all");
+      renderCartSummary();
+    } catch (err) {
+      console.error("خطا در دریافت داده‌ها:", err);
+      menuContainer.innerHTML =
+        '<p class="text-red-500 text-center p-4">خطا در بارگذاری محصولات</p>';
+    }
+  }
+
+  function renderCategories() {
+  categoryTabs.innerHTML = "";
+
+  // دکمه همه
+  const allBtn = document.createElement("button");
+  allBtn.textContent = "همه";
+  allBtn.dataset.category = "all";
+  allBtn.className =
+    "category-tab active px-4 py-2 rounded-full border border-gray-300 text-sm whitespace-nowrap flex items-center gap-2";
+  allBtn.addEventListener("click", () => {
+    setActiveCategory("all");
+    renderProducts("all");
+  });
+
+  // آیکون دکمه همه (اختیاری)
+  const allIcon = document.createElement("img");
+  allIcon.src = "icons/all.svg"; // مسیر آیکون «همه»
+  allIcon.alt = "همه";
+  allIcon.className = "w-5 h-5";
+  allBtn.prepend(allIcon);
+
+  categoryTabs.appendChild(allBtn);
+
+  // دکمه‌های دسته‌بندی
+  categories.forEach((cat) => {
+    const btn = document.createElement("button");
+    btn.dataset.category = cat._id;
+    btn.className =
+      "category-tab px-4 py-2 rounded-full border border-gray-300 text-sm whitespace-nowrap flex items-center gap-2";
+
+    // ساختن عنصر تصویر آیکون
+    const icon = document.createElement("img");
+    icon.src = cat.iconUrl || "icons/default.svg";
+    icon.alt = cat.name;
+    icon.className = "w-5 h-5";
+
+    // متن دسته‌بندی
+    const text = document.createTextNode(cat.name);
+
+    btn.appendChild(icon);
+    btn.appendChild(text);
+
+    btn.addEventListener("click", () => {
+      setActiveCategory(cat._id);
+      renderProducts(cat._id);
+    });
+
+    categoryTabs.appendChild(btn);
+  });
+}
+
+
+  function setActiveCategory(catId) {
+    document.querySelectorAll(".category-tab").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.category === catId);
+    });
+  }
+
+  function renderProducts(categoryId) {
+    menuContainer.innerHTML = "";
+
+    const categoryName =
+      categoryId === "all" ? null : categories.find((c) => c._id === categoryId)?.name;
+
+    const filtered =
+      categoryId === "all" ? products : products.filter((p) => p.category === categoryName);
+
+    if (filtered.length === 0) {
+      menuContainer.innerHTML =
+        '<p class="text-center text-gray-500 py-4">هیچ محصولی برای این دسته‌بندی وجود ندارد.</p>';
+      return;
+    }
+
+    filtered.forEach((p) => {
+      const quantity = getCartQuantity(p.name);
+
+      const div = document.createElement("div");
+      div.className = "menu-item";
+      div.dataset.category = p.category;
+      div.dataset.id = p._id;
+      div.dataset.price = p.price;
+
+      div.innerHTML = `
+  <div class="flex gap-3 items-start border-b border-gray-200 py-3 mb-3">
+    <!-- عکس سمت چپ -->
+    <div class="w-20 h-20 bg-gray-200 rounded-xl order-2">
+      <img src="${p.image || ''}" alt="${p.name}" class="w-full h-full object-cover rounded-xl">
+    </div>
+
+    <!-- محتوا -->
+    <div class="flex flex-col w-full order-1">
+      <div class="flex justify-between items-start">
+        <h3 class="font-semibold">${p.name}</h3>
+        <span class="text-amber-500 font-bold">${p.price.toLocaleString()}</span>
+      </div>
+
+      <!-- ترکیبات -->
+      <p class="text-xs text-gray-500 mt-1">${p.description || "ترکیبات: نامشخص"}</p>
+
+      <div class="flex justify-between items-center mt-2">
+        <div class="flex items-center gap-2 ${quantity > 0 ? "" : "hidden"} quantity">
+          <button class="decrease bg-amber-400 text-white w-8 h-8 rounded-full">-</button>
+          <span class="quantity-number font-semibold">${quantity}</span>
+          <button class="increase bg-amber-400 text-white w-8 h-8 rounded-full">+</button>
+        </div>
+
+        <button class="add bg-amber-400 text-white w-8 h-8 rounded-full ${quantity > 0 ? "hidden" : ""}">+</button>
+      </div>
+    </div>
+  </div>
+`;
+
+
+      menuContainer.appendChild(div);
+    });
+
+    attachMenuEventListeners();
+  }
+
+  function getCartQuantity(productName) {
+    const item = cart.find(i => i.productName === productName);
+    return item ? item.quantity : 0;
+  }
+
+  function attachMenuEventListeners() {
+    const items = document.querySelectorAll(".menu-item");
+
+    items.forEach((item) => {
+      const productName = item.querySelector("h3").textContent;
+      const addBtn = item.querySelector(".add");
+      const qtyBox = item.querySelector(".quantity");
+      const qtyNum = item.querySelector(".quantity-number");
+      const incBtn = item.querySelector(".increase");
+      const decBtn = item.querySelector(".decrease");
+
+      addBtn.addEventListener("click", async () => {
+        await updateCart(productName, "increase");
+        qtyNum.textContent = getCartQuantity(productName);
+        qtyBox.classList.remove("hidden");
+        addBtn.classList.add("hidden");
+      });
+
+      incBtn.addEventListener("click", async () => {
+        await updateCart(productName, "increase");
+        qtyNum.textContent = getCartQuantity(productName);
+      });
+
+      decBtn.addEventListener("click", async () => {
+        await updateCart(productName, "decrease");
+        const q = getCartQuantity(productName);
+        if (q <= 0) {
+          qtyBox.classList.add("hidden");
+          addBtn.classList.remove("hidden");
+        } else {
+          qtyNum.textContent = q;
+        }
+      });
+    });
+  }
+
+  async function updateCart(productName, action) {
+    try {
+      const res = await fetch("/api/cart/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productName, action }),
+      });
+      if (!res.ok) throw new Error("خطا در به‌روزرسانی سبد خرید");
+      const data = await res.json();
+      cart = data.items;
+      renderCartSummary();
+    } catch (err) {
+      alert("خطا در به‌روزرسانی سبد خرید");
+      console.error(err);
+    }
+  }
+
+  function renderCartSummary() {
+    const totalItems = cart.reduce((a, b) => a + b.quantity, 0);
+    const totalPrice = cart.reduce((a, b) => a + b.price * b.quantity, 0);
+
+    cartCount.textContent = totalItems;
+    cartTotal.textContent = totalPrice.toLocaleString();
+
+    if (totalItems > 0) {
+      cartBox.classList.remove("opacity-0", "pointer-events-none");
+    } else {
+      cartBox.classList.add("opacity-0", "pointer-events-none");
+    }
+  }
+
+  fetchData();
+</script>
+
+</body>
+</html>
