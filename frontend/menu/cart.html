@@ -52,99 +52,47 @@
   </div>
 
 <script>
-  async function fetchCart() {
-    try {
-      const res = await fetch('/api/cart');
-      if (!res.ok) throw new Error('خطا در دریافت سبد خرید');
-      const data = await res.json();
-      renderCartItems(data.items);
-      renderOrderSummary(data.items);
-    } catch (err) {
-      document.getElementById('cart-items').innerHTML =
-        '<p class="text-red-500 text-center p-4">خطا در بارگذاری سبد خرید</p>';
-      console.error(err);
-    }
+ async function fetchCart() {
+  try {
+    const API_BASE = "https://api.menuchin-hanul.ir/api";
+    const res = await fetch(`${API_BASE}/cart`);
+    if (!res.ok) throw new Error('خطا در دریافت سبد خرید');
+    const data = await res.json();
+    renderCartItems(data.items);
+    renderOrderSummary(data.items);
+  } catch (err) {
+    document.getElementById('cart-items').innerHTML =
+      '<p class="text-red-500 text-center p-4">خطا در بارگذاری سبد خرید</p>';
+    console.error(err);
   }
+}
 
-  function renderCartItems(items) {
-    const container = document.getElementById('cart-items');
-    container.innerHTML = '';
-    items.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'flex items-center justify-between bg-white rounded-2xl p-2 border border-gray-200 shadow';
-      div.innerHTML = `
-        <span class="font-semibold text-gray-800">${item.productName}</span>
-        <div class="flex items-center gap-2">
-          <button class="bg-amber-400 text-white w-9 h-9 rounded-full text-xl hover:bg-amber-500" data-action="decrease" data-name="${item.productName}">-</button>
-          <span class="w-6 text-center font-semibold quantity">${item.quantity}</span>
-          <button class="bg-amber-400 text-white w-9 h-9 rounded-full text-xl hover:bg-amber-500" data-action="increase" data-name="${item.productName}">+</button>
-        </div>
-      `;
-      container.appendChild(div);
-    });
+function attachQuantityButtons() {
+  document.querySelectorAll('#cart-items button').forEach(btn => {
+    btn.onclick = async () => {
+      const action = btn.dataset.action;
+      const productName = btn.dataset.name;
+      try {
+        const API_BASE = "https://api.menuchin-hanul.ir/api";
+        const res = await fetch(`${API_BASE}/cart/update`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ productName, action })
+        });
+        if (!res.ok) throw new Error('خطا در بروزرسانی سبد خرید');
+        const data = await res.json();
+        renderCartItems(data.items);
+        renderOrderSummary(data.items);
+      } catch (err) {
+        alert('خطا در بروزرسانی سبد خرید');
+        console.error(err);
+      }
+    };
+  });
+}
 
-    attachQuantityButtons();
-  }
+fetchCart();
 
-  function renderOrderSummary(items) {
-    const container = document.getElementById('order-summary');
-    container.innerHTML = '';
-
-    items.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'flex justify-between text-sm text-gray-600';
-      row.innerHTML = `
-        <span>${item.productName}</span>
-        <span class="text-left direction-ltr">${(item.price * item.quantity).toLocaleString()} ت</span>
-      `;
-      container.appendChild(row);
-    });
-
-    const totalQuantity = items.reduce((sum, i) => sum + i.quantity, 0);
-    const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-    const totalRow = document.createElement('div');
-    totalRow.className = 'flex justify-between text-sm text-gray-600 font-semibold border-t border-dashed border-yellow-300 pt-2';
-    totalRow.innerHTML = `
-      <span>مجموع اقلام</span>
-      <span class="text-left direction-ltr">${totalQuantity} عدد</span>
-    `;
-    container.appendChild(totalRow);
-
-    const payRow = document.createElement('div');
-    payRow.className = 'flex justify-between text-lg font-bold text-amber-600';
-    payRow.innerHTML = `
-      <span>مبلغ قابل پرداخت</span>
-      <span class="text-left direction-ltr">${totalPrice.toLocaleString()} هزار تومان</span>
-    `;
-    container.appendChild(payRow);
-  }
-
-  function attachQuantityButtons() {
-    document.querySelectorAll('#cart-items button').forEach(btn => {
-      btn.onclick = async () => {
-        const action = btn.dataset.action;
-        const productName = btn.dataset.name;
-
-        try {
-          const res = await fetch('/api/cart/update', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ productName, action })
-          });
-          if (!res.ok) throw new Error('خطا در بروزرسانی سبد خرید');
-          const data = await res.json();
-          renderCartItems(data.items);
-          renderOrderSummary(data.items);
-        } catch (err) {
-          alert('خطا در بروزرسانی سبد خرید');
-          console.error(err);
-        }
-      };
-    });
-  }
-
-  fetchCart();
 </script>
 
 </body>

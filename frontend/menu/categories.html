@@ -66,11 +66,12 @@
     <script>
       async function fetchCategories() {
         try {
-          const res = await fetch("/api/categories");
+          const API_BASE = "/api";
+
+          const res = await fetch(`${API_BASE}/categories`);
           if (!res.ok) throw new Error("پاسخ سرور مشکل دارد: " + res.status);
           const categories = await res.json();
 
-          // چک کردن داده دریافتی
           if (!Array.isArray(categories)) {
             throw new Error("داده دریافتی آرایه نیست");
           }
@@ -79,7 +80,6 @@
           container.innerHTML = "";
 
           categories.forEach((cat) => {
-            // اگر نام فیلدها در دیتابیس یا API شما متفاوت است اینجا اصلاح کن:
             const persianName =
               cat.persianName || cat.name || "نام دسته موجود نیست";
             const englishName = cat.englishName || cat.english_name || "";
@@ -94,16 +94,15 @@
             a.title = persianName;
 
             a.innerHTML = `
-  <img src="${imageUrl}" alt="${persianName}" />
-  <p class="persian-name">
-    ${persianName} <span class="text-gray-400">|</span> <span class="text-sm text-gray-500">${englishName}</span>
-  </p>
-`;
+        <img src="${imageUrl}" alt="${persianName}" />
+        <p class="persian-name">
+          ${persianName} <span class="text-gray-400">|</span> <span class="text-sm text-gray-500">${englishName}</span>
+        </p>
+      `;
 
             container.appendChild(a);
           });
 
-          // اگر دسته‌ها خالی بودند نمایش پیام
           if (categories.length === 0) {
             container.innerHTML =
               '<p class="text-center text-gray-500">هیچ دسته‌بندی‌ای یافت نشد.</p>';

@@ -28,7 +28,7 @@
 </aside>
 
 <!-- بخش محصولات -->
-<main class="flex-1 bg-white rounded-3xl shadow-lg p-6">
+<main class="flex-1 bg-white rounded-3xl shadow-lg p-6 flex flex-col">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold text-amber-500">مدیریت محصولات</h1>
     <button id="btn-add-product" class="bg-amber-400 hover:bg-amber-500 text-white rounded-xl py-2 px-4 font-semibold transition">
@@ -36,12 +36,12 @@
     </button>
   </div>
 
-  <div id="product-list" class="space-y-4 overflow-y-auto max-h-[70vh]"></div>
+  <div id="product-list" class="space-y-4 overflow-y-auto max-h-[70vh] flex-grow"></div>
 </main>
 
 <!-- مودال دسته -->
 <div id="category-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-  <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-4">
+  <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-4" onclick="event.stopPropagation()">
     <h2 id="category-modal-title" class="text-xl font-bold text-gray-800"></h2>
     <input type="hidden" id="category-id" />
     <input type="text" id="category-name" placeholder="نام دسته (فارسی)" class="w-full border border-gray-300 rounded-xl p-2" />
@@ -56,7 +56,7 @@
 
 <!-- مودال محصول -->
 <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-  <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-4">
+  <div class="bg-white rounded-3xl p-6 max-w-md w-full space-y-4" onclick="event.stopPropagation()">
     <h2 id="product-modal-title" class="text-xl font-bold text-gray-800"></h2>
     <input type="hidden" id="product-id" />
     <input type="text" id="product-name" placeholder="نام محصول" class="w-full border border-gray-300 rounded-xl p-2" />
@@ -123,7 +123,8 @@ function openProductModal(prod = {}) {
   productPriceInput.value = prod.price || "";
   productCategorySelect.innerHTML = `<option value="">انتخاب دسته</option>`;
   categories.forEach(c => {
-    productCategorySelect.innerHTML += `<option value="${c._id}" ${c._id===prod.categoryId?"selected":""}>${c.name}</option>`;
+    const selected = c._id === prod.categoryId ? "selected" : "";
+    productCategorySelect.innerHTML += `<option value="${c._id}" ${selected}>${c.name}</option>`;
   });
   deleteProductBtn.classList.toggle("hidden", !prod._id);
   productModal.classList.remove("hidden");
@@ -133,47 +134,73 @@ function closeModal(modal) { modal.classList.add("hidden"); }
 
 cancelCategoryBtn.onclick = () => closeModal(categoryModal);
 cancelProductBtn.onclick = () => closeModal(productModal);
-categoryModal.onclick = e => { if(e.target===categoryModal) closeModal(categoryModal); };
-productModal.onclick = e => { if(e.target===productModal) closeModal(productModal); };
+
+categoryModal.onclick = e => { if (e.target === categoryModal) closeModal(categoryModal); };
+productModal.onclick = e => { if (e.target === productModal) closeModal(productModal); };
 
 async function fetchCategories() {
-  const res = await fetch(`${apiURL}/categories`);
-  categories = await res.json();
-  renderCategories();
+  try {
+    const res = await fetch(`${apiURL}/categories`);
+    if (!res.ok) throw new Error("خطا در دریافت دسته‌ها");
+    categories = await res.json();
+    renderCategories();
+  } catch (e) {
+    alert(e.message);
+  }
 }
+
 async function fetchProducts() {
-  const res = await fetch(`${apiURL}/products`);
-  products = (await res.json()).products || [];
-  renderProducts();
+  try {
+    const res = await fetch(`${apiURL}/products`);
+    if (!res.ok) throw new Error("خطا در دریافت محصولات");
+    const data = await res.json();
+    products = data.products || [];
+    renderProducts();
+  } catch (e) {
+    alert(e.message);
+  }
 }
 
 function renderCategories() {
   categoryFilter.innerHTML = "";
   const allLi = document.createElement("li");
   allLi.textContent = "همه محصولات";
-  allLi.className = `py-2 px-3 rounded-xl cursor-pointer text-center font-semibold ${currentFilter==="all"?"bg-amber-400 text-white":""}`;
-  allLi.onclick = () => { currentFilter="all"; renderCategories(); renderProducts(); };
+  allLi.className = `py-2 px-3 rounded-xl cursor-pointer text-center font-semibold ${currentFilter === "all" ? "bg-amber-400 text-white" : ""}`;
+  allLi.onclick = () => {
+    currentFilter = "all";
+    renderCategories();
+    renderProducts();
+  };
   categoryFilter.appendChild(allLi);
 
   categories.forEach(c => {
     const li = document.createElement("li");
-    li.className = `py-2 px-3 rounded-xl cursor-pointer flex flex-col ${currentFilter===c._id?"bg-amber-400 text-white":"bg-gray-50 hover:bg-amber-50"}`;
-    const name = document.createElement("div");
-    name.textContent = c.name;
-    name.className = "text-center";
-    name.onclick = () => { currentFilter=c._id; renderCategories(); renderProducts(); };
-    const edit = document.createElement("button");
-    edit.textContent = "ویرایش";
-    edit.className = "text-xs mt-1 bg-amber-300 hover:bg-amber-400 px-2 py-1 rounded";
-    edit.onclick = e => { e.stopPropagation(); openCategoryModal(c); };
-    li.append(name, edit);
+    li.className = `py-2 px-3 rounded-xl cursor-pointer flex flex-col ${currentFilter === c._id ? "bg-amber-400 text-white" : "bg-gray-50 hover:bg-amber-50"}`;
+    const nameDiv = document.createElement("div");
+    nameDiv.textContent = c.name;
+    nameDiv.className = "text-center";
+    nameDiv.onclick = () => {
+      currentFilter = c._id;
+      renderCategories();
+      renderProducts();
+    };
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "ویرایش";
+    editBtn.className = "text-xs mt-1 bg-amber-300 hover:bg-amber-400 px-2 py-1 rounded";
+    editBtn.onclick = e => {
+      e.stopPropagation();
+      openCategoryModal(c);
+    };
+
+    li.append(nameDiv, editBtn);
     categoryFilter.appendChild(li);
   });
 }
 
 function renderProducts() {
   productList.innerHTML = "";
-  const filtered = currentFilter==="all" ? products : products.filter(p=>p.categoryId===currentFilter);
+  const filtered = currentFilter === "all" ? products : products.filter(p => p.categoryId === currentFilter);
   if (!filtered.length) {
     productList.innerHTML = `<p class="text-center text-gray-500">محصولی یافت نشد.</p>`;
     return;
@@ -182,36 +209,156 @@ function renderProducts() {
   filtered.forEach(p => {
     const div = document.createElement("div");
     div.className = "flex justify-between items-center bg-gray-50 rounded-xl p-4 shadow";
-    div.innerHTML = `
-      <div>
-        <p class="font-semibold">${p.name}</p>
-        <p class="text-sm text-gray-600">${p.price} تومان</p>
-      </div>
-      <div class="flex gap-2">
-        <button class="bg-amber-300 hover:bg-amber-400 px-3 py-1 rounded" onclick='openProductModal(${JSON.stringify(p)})'>ویرایش</button>
-        <button class="bg-red-400 hover:bg-red-500 px-3 py-1 rounded" onclick='deleteProduct("${p._id}")'>حذف</button>
-        <button class="bg-blue-300 hover:bg-blue-400 px-3 py-1 rounded" onclick='toggleStatus("${p._id}")'>${p.active?"غیرفعال":"فعال"}</button>
-      </div>
-    `;
+
+    const infoDiv = document.createElement("div");
+    infoDiv.innerHTML = `<p class="font-semibold">${p.name}</p><p class="text-sm text-gray-600">${p.price.toLocaleString()} تومان</p>`;
+
+    const buttonsDiv = document.createElement("div");
+    buttonsDiv.className = "flex gap-2";
+
+    const btnEdit = document.createElement("button");
+    btnEdit.className = "bg-amber-300 hover:bg-amber-400 px-3 py-1 rounded";
+    btnEdit.textContent = "ویرایش";
+    btnEdit.onclick = () => openProductModal(p);
+
+    const btnDelete = document.createElement("button");
+    btnDelete.className = "bg-red-400 hover:bg-red-500 px-3 py-1 rounded";
+    btnDelete.textContent = "حذف";
+    btnDelete.onclick = () => deleteProduct(p._id);
+
+    const btnToggle = document.createElement("button");
+    btnToggle.className = "bg-blue-300 hover:bg-blue-400 px-3 py-1 rounded";
+    btnToggle.textContent = p.active ? "غیرفعال" : "فعال";
+    btnToggle.onclick = () => toggleStatus(p._id);
+
+    buttonsDiv.append(btnEdit, btnDelete, btnToggle);
+    div.append(infoDiv, buttonsDiv);
     productList.appendChild(div);
   });
 }
 
-window.openProductModal = openProductModal;
+// ذخیره دسته
+async function saveCategory() {
+  const id = categoryIdInput.value.trim();
+  const name = categoryNameInput.value.trim();
+  const englishName = categoryEnglishNameInput.value.trim();
 
+  if (!name) {
+    alert("نام دسته را وارد کنید");
+    return;
+  }
+
+  try {
+    const method = id ? "PUT" : "POST";
+    const url = id ? `${apiURL}/categories/${id}` : `${apiURL}/categories`;
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, englishName }),
+    });
+
+    if (!res.ok) throw new Error("خطا در ذخیره دسته");
+
+    await fetchCategories();
+    closeModal(categoryModal);
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+// حذف دسته
+async function deleteCategory() {
+  const id = categoryIdInput.value.trim();
+  if (!id || !confirm("آیا مطمئنید که می‌خواهید این دسته را حذف کنید؟")) return;
+
+  try {
+    const res = await fetch(`${apiURL}/categories/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("خطا در حذف دسته");
+
+    await fetchCategories();
+    closeModal(categoryModal);
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+// ذخیره محصول
+async function saveProduct() {
+  const id = productIdInput.value.trim();
+  const name = productNameInput.value.trim();
+  const price = Number(productPriceInput.value.trim());
+  const categoryId = productCategorySelect.value;
+
+  if (!name) {
+    alert("نام محصول را وارد کنید");
+    return;
+  }
+  if (!price || price <= 0) {
+    alert("قیمت معتبر وارد کنید");
+    return;
+  }
+  if (!categoryId) {
+    alert("دسته محصول را انتخاب کنید");
+    return;
+  }
+
+  try {
+    const method = id ? "PUT" : "POST";
+    const url = id ? `${apiURL}/products/${id}` : `${apiURL}/products`;
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, price, categoryId }),
+    });
+
+    if (!res.ok) throw new Error("خطا در ذخیره محصول");
+
+    await fetchProducts();
+    closeModal(productModal);
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+// حذف محصول
 async function deleteProduct(id) {
-  if(!confirm("حذف شود؟")) return;
-  await fetch(`${apiURL}/products/${id}`,{method:"DELETE"});
-  fetchProducts();
+  if (!confirm("آیا مطمئنید که می‌خواهید این محصول را حذف کنید؟")) return;
+
+  try {
+    const res = await fetch(`${apiURL}/products/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("خطا در حذف محصول");
+
+    await fetchProducts();
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
+// تغییر وضعیت فعال/غیرفعال محصول
 async function toggleStatus(id) {
-  await fetch(`${apiURL}/products/${id}/toggle`,{method:"PATCH"});
-  fetchProducts();
+  try {
+    const res = await fetch(`${apiURL}/products/${id}/toggle`, { method: "PATCH" });
+    if (!res.ok) throw new Error("خطا در تغییر وضعیت محصول");
+
+    await fetchProducts();
+  } catch (error) {
+    alert(error.message);
+  }
 }
+
+saveCategoryBtn.onclick = saveCategory;
+deleteCategoryBtn.onclick = deleteCategory;
+saveProductBtn.onclick = saveProduct;
+deleteProductBtn.onclick = () => {
+  const id = productIdInput.value.trim();
+  if (id) deleteProduct(id);
+};
 
 fetchCategories();
 fetchProducts();
+
 </script>
 </body>
 </html>

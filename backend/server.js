@@ -1,3 +1,4 @@
+const apiURL = "https://api.menuchin-hanul.ir";
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
@@ -83,6 +84,9 @@ app.use((err, req, res, next) => {
 });
 
 // --- Routes ---
+app.get("/", (req, res) => {
+  res.redirect("/menu/index.html");
+});
 
 // تست سرور (optional)
 app.get("/", (req, res) => {
@@ -230,7 +234,6 @@ app.put("/api/products/:id", upload, async (req, res) => {
     res.status(500).json({ message: "خطا در ویرایش محصول: " + err.message });
   }
 });
-
 
 // حذف محصول
 app.delete("/api/products/:id", async (req, res) => {
