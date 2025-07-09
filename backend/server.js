@@ -86,7 +86,7 @@ app.use((err, req, res, next) => {
 
 // --- Routes ---
 app.get("/", (req, res) => {
-  res.redirect("/menu/index.js");
+  res.redirect("/menu/index.html");
 });
 
 // تست سرور (optional)
