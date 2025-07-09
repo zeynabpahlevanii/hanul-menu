@@ -1,4 +1,4 @@
-const apiURL = "https://menuchin-hanul.ir";
+const apiURL = "https://menuchin-hanul.ir/api";
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
